@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arrow Out</title>
+<meta name="description" content="Slide the snakes out. A puzzle game with 1000 levels.">
+<meta name="theme-color" content="#1d3b3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arrow Out">
+<meta property="og:title" content="Arrow Out"><meta property="og:description" content="Slide the snakes out. A puzzle game with 1000 levels."><meta property="og:type" content="website">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3ecdd;--board:#e4d8c0;--cell:#fbf6ea;--ink:#1d3b3a;--mute:#6b7d78;--a1:#e4572e;--a2:#2a9d8f;--a3:#e9a820;--a4:#5b6ee1;--hit:#d62839;--btn:#1d3b3a;--btnt:#fbf6ea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f2a2c;--board:#173b3d;--cell:#1f4a4c;--ink:#f3ecdd;--mute:#8fb0aa;--btn:#f3ecdd;--btnt:#0f2a2c}}
+:root[data-theme="dark"]{--bg:#0f2a2c;--board:#173b3d;--cell:#1f4a4c;--ink:#f3ecdd;--mute:#8fb0aa;--btn:#f3ecdd;--btnt:#0f2a2c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Fredoka',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:16px;gap:14px;user-select:none;overflow-x:hidden}
+header{width:100%;max-width:440px;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:1.5rem;margin:0}
+.stat{font-size:1rem;color:var(--mute)}
+.hearts{font-size:1.4rem;letter-spacing:2px}
+#board{position:relative;width:min(100%,440px);aspect-ratio:1;background:var(--board);border-radius:18px;padding:8px;overflow:hidden}
+svg{width:100%;height:100%;display:block;touch-action:manipulation}
+g.p{cursor:pointer}
+g.p.shake{animation:shake .3s}
+g.p.hint{animation:pulse .6s infinite;filter:drop-shadow(0 0 .1px #fff) drop-shadow(0 0 .1px #fff)}
+g.p.block{filter:drop-shadow(0 0 .12px var(--hit)) drop-shadow(0 0 .12px var(--hit))}
+@keyframes shake{25%{translate:-.08px 0}75%{translate:.08px 0}}
+@keyframes pulse{50%{opacity:.3}}
+.row{display:flex;gap:10px;width:100%;max-width:440px}
+button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:12px 16px;background:var(--btn);color:var(--btnt);flex:1;cursor:pointer;min-height:48px}
+button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+#msg{position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 88%,transparent);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;z-index:5;padding:20px}
+#msg.show{display:flex}
+#msg h2{font-size:2rem;margin:0}
+#msg p{margin:0;color:var(--mute)}
+#msg button{flex:none;min-width:180px}
+@media (prefers-reduced-motion:reduce){g.p.shake,g.p.hint{animation:none}}
+#mx{display:flex;flex-direction:column;gap:8px}
+#mx button{min-width:180px;flex:none}
+#ad{display:none;position:fixed;inset:0;z-index:20;background:#000;color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+#ad.show{display:flex}
+#ad p{margin:0}#adc{font-size:3rem;font-weight:700}
+#ad button{flex:none;min-width:180px;background:#fff;color:#000}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--btn);color:var(--btnt);padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90%;text-align:center}
+#toast.show{opacity:1}
+#bar{width:100%;max-width:440px;height:8px;background:var(--board);border-radius:6px;overflow:hidden}
+#barf{display:block;height:100%;width:0;background:var(--a2);transition:width .3s}
+#menu,#lv{position:fixed;inset:0;z-index:15;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px))}
+#menu.show,#lv.show{display:flex}
+#menu h1{font-size:3rem}#menu button{flex:none;width:min(80%,280px)}
+#lv{justify-content:flex-start;overflow-y:auto}
+#lgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;max-width:440px}
+#lgrid button{flex:none;padding:6px 0;min-height:58px;line-height:1.2}
+#lgrid button small{display:block;font-size:.7rem;font-weight:500}
+#lgrid button:disabled{opacity:.35}
+#menu{background:radial-gradient(circle at 50% 18%,var(--board),var(--bg) 72%)}
+.logo{display:flex;gap:8px}.logo svg{width:54px;height:54px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.18))}
+.chip{background:var(--board);border-radius:999px;padding:6px 16px;font-weight:700;margin:0}
+#menu button{padding:16px;font-size:1.15rem}
+#menu.show>*{animation:rise .45s both}
+#menu.show>*:nth-child(2){animation-delay:.05s}#menu.show>*:nth-child(3){animation-delay:.1s}#menu.show>*:nth-child(4){animation-delay:.15s}#menu.show>*:nth-child(5){animation-delay:.2s}#menu.show>*:nth-child(6){animation-delay:.25s}#menu.show>*:nth-child(7){animation-delay:.3s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+@keyframes glow{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--a3) 60%,transparent)}}
+#lv h2{margin:0;font-size:1.4rem}
+#wchips{display:flex;gap:8px;overflow-x:auto;width:100%;max-width:440px;padding:4px 0 8px}
+button.chip{flex:none;min-height:40px;padding:6px 14px;background:var(--board);color:var(--ink);box-shadow:none}
+button.chip.on{background:var(--btn);color:var(--btnt)}button.chip:disabled{opacity:.3}
+#lgrid button.cur{animation:glow 1.3s infinite}
+#lgrid button.t3{background:linear-gradient(135deg,var(--a3),var(--a1));color:#fff;box-shadow:none}
+@media (prefers-reduced-motion:reduce){#menu.show>*,#lgrid button.cur{animation:none}}
+button:disabled{opacity:.5}
+.cf{position:absolute;top:-10px;font-style:normal;font-size:1.3rem;z-index:6;pointer-events:none;animation:fall 1.4s ease-in both}
+@keyframes fall{to{transform:translateY(480px) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title" style="cursor:pointer">☰ Arrow Out</h1>
+  <div class="stat" id="lvl"></div>
+  <div class="hearts" id="hp" aria-label="Lives"></div>
+</header>
+<div id="bar"><i id="barf"></i></div>
+<div id="board">
+  <svg id="svg"></svg>
+  <div id="msg"><h2 id="mt"></h2><p id="mp"></p><button id="mb"></button><div id="mx"></div></div>
+</div>
+<div id="menu" class="show"><div class="logo"><svg viewBox="0 0 40 40"><rect x="3" y="3" width="34" height="34" rx="9" fill="var(--a1)"/><path d="M20 9 L30 21 H23 V31 H17 V21 H10 Z" fill="#fff"/></svg><svg viewBox="0 0 40 40"><rect x="3" y="3" width="34" height="34" rx="9" fill="var(--a2)"/><path d="M20 9 L30 21 H23 V31 H17 V21 H10 Z" fill="#fff"/></svg><svg viewBox="0 0 40 40"><rect x="3" y="3" width="34" height="34" rx="9" fill="var(--a3)"/><path d="M20 9 L30 21 H23 V31 H17 V21 H10 Z" fill="#fff"/></svg></div><h1>Arrow Out</h1><p class="chip" id="mcoins"></p>
+  <button id="mplay">Play</button><button class="ghost" id="mdaily">🎁 Daily reward</button><button class="ghost" id="mlev">🗺️ Levels</button><button class="ghost" id="mprem">★ Premium</button><button class="ghost" id="msnd">🔊 Sound on</button><button class="ghost" id="minstall" style="display:none">⬇ Install app</button><a class="stat" href="https://abaan-07.github.io/arrowout-privacy/" target="_blank" rel="noopener" style="color:var(--mute)">Privacy policy</a></div>
+<div id="lv"><h2 id="wtitle"></h2><div id="wchips"></div><div id="lgrid"></div><button class="ghost" id="lback" style="flex:none;width:200px;margin-top:6px">← Back</button></div>
+<div id="toast"></div>
+<div id="ad"><p id="adt"></p><p id="adc"></p><button id="adx"></button></div>
+<div class="stat" id="info"></div>
+<div class="row">
+  <button class="ghost" id="hint">Hint</button>
+  <button class="ghost" id="restart">Restart</button>
+  <button class="ghost" id="prem">★ Premium</button>
+  <button class="ghost" id="snd" style="flex:0 0 56px;padding:0" aria-label="Sound">🔊</button>
+</div>
+<script>
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]]; // up,right,down,left
+const COLS=['--a1','--a2','--a3','--a4'];
+let level=1,n,pieces,lives,moves,done;
+let unlocked=1;try{unlocked=parseInt(localStorage.getItem('arrowout2-level'))||1}catch(e){}
+level=unlocked;
+const $=id=>document.getElementById(id);
+const out=c=>c.x<0||c.y<0||c.x>=n||c.y>=n;
+
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// first live piece found on the head's path to the edge, or null
+function blocker(p){
+  const h=p.cells[p.cells.length-1],[dx,dy]=DIRS[p.d];
+  let x=h.x+dx,y=h.y+dy;
+  while(!out({x,y})){
+    const b=pieces.find(q=>!q.gone&&q!==p&&q.cells.some(c=>c.x===x&&c.y===y));
+    if(b)return b;
+    x+=dx;y+=dy;
+  }
+  return null;
+}
+
+function generate(lv){
+  const r=rng(lv*7919),key=(x,y)=>x+','+y;
+  n=Math.min(12,5+Math.floor(Math.sqrt(lv)/1.6));
+  const maxLen=Math.min(8,2+Math.floor(lv/8)),minLen=Math.min(3,lv>=4?2+Math.floor(lv/150):1);
+  const budget=Math.min(Math.floor(n*n*(.55+Math.min(.3,lv*.004))),8+lv*4);
+  const occ=new Set(),list=[];let used=0,tries=0;
+  const build=()=>{
+    const L=minLen+Math.floor(r()*(maxLen-minLen+1)),sx=Math.floor(r()*n),sy=Math.floor(r()*n);
+    if(occ.has(key(sx,sy)))return null;
+    const path=[{x:sx,y:sy}],mine=new Set([key(sx,sy)]);let d=Math.floor(r()*4);
+    while(path.length<L){
+      const h=path[path.length-1];
+      const opts=DIRS.map((v,i)=>[i,h.x+v[0],h.y+v[1]]).filter(([i,x,y])=>x>=0&&y>=0&&x<n&&y<n&&!occ.has(key(x,y))&&!mine.has(key(x,y)));
+      if(!opts.length)break;
+      const [i,x,y]=opts[Math.floor(r()*opts.length)];
+      path.push({x,y});mine.add(key(x,y));d=i;
+    }
+    // the newest piece exits first, so its path may not cross any earlier piece
+    const h=path[path.length-1],ray=new Set();let x=h.x+DIRS[d][0],y=h.y+DIRS[d][1];
+    while(x>=0&&y>=0&&x<n&&y<n){if(occ.has(key(x,y)))return null;ray.add(key(x,y));x+=DIRS[d][0];y+=DIRS[d][1]}
+    return{cells:path,draw:path.slice(),d,gone:false,removed:false,col:COLS[Math.floor(r()*4)],ray};
+  };
+  while(used<budget&&tries++<4000){
+    // harder levels: try several candidates and keep the one that blocks the most existing arrows
+    let best=null,bs=-1;
+    for(let k=0;k<(lv<3?1:Math.min(14,4+Math.floor(lv/20)));k++){
+      const c=build();if(!c)continue;
+      const sc=list.filter(p=>c.cells.some(q=>p.ray.has(key(q.x,q.y)))).length+c.cells.length*.15;
+      if(sc>bs){bs=sc;best=c}
+    }
+    if(best){best.cells.forEach(c=>occ.add(key(c.x,c.y)));used+=best.cells.length;list.push(best)}
+  }
+  return list;
+}
+
+function render(hintI,badI,shakeI){
+  let s=`<svg viewBox="0 0 ${n} ${n}" id="svg" xmlns="http://www.w3.org/2000/svg">`;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)s+=`<rect x="${x+.06}" y="${y+.06}" width=".88" height=".88" rx=".18" fill="var(--cell)" opacity=".55"/>`;
+  pieces.forEach((p,i)=>{
+    if(p.removed)return;
+    const pts=p.draw.map(c=>`${c.x+.5},${c.y+.5}`);
+    const h=p.draw[p.draw.length-1];
+    const cls='p'+(i===hintI?' hint':'')+(i===badI?' block':'')+(i===shakeI?' shake':'');
+    s+=`<g class="${cls}" data-i="${i}" style="color:var(${p.col})">`;
+    s+=`<polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width=".56" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s+=pts.map(q=>`<circle cx="${q.split(',')[0]}" cy="${q.split(',')[1]}" r=".28" fill="currentColor"/>`).join('');
+    s+=`<path d="M0 -.3 L.24 .08 L-.24 .08 Z" fill="#fff" transform="translate(${h.x+.5} ${h.y+.5}) rotate(${p.d*90})"/></g>`;
+  });
+  $('board').querySelector('svg').outerHTML=s+'</svg>';
+  $('svg').onclick=e=>{const g=e.target.closest('g.p');if(g)tap(+g.dataset.i)};
+}
+
+function hearts(){const m=maxLives();$('hp').textContent='♥'.repeat(lives)+'♡'.repeat(m-lives)}
+function info(){$('info').textContent=`${pieces.filter(p=>!p.gone).length} arrows left · ${moves} moves · v13w`;$('barf').style.width=(100*pieces.filter(p=>p.gone).length/pieces.length)+'%'}
+
+function load(){
+  pieces=generate(level);lives=maxLives();moves=0;done=false;
+  updateTop();
+  $('msg').classList.remove('show');
+  hearts();info();render();
+}
+
+function tap(i){
+  const p=pieces[i];
+  if(done||p.gone)return;
+  const b=blocker(p);
+  if(b){
+    lives--;buzz(60);tone(150,.25,'sawtooth',.1);hearts();render(-1,pieces.indexOf(b),i);
+    setTimeout(()=>{if(!done||lives<=0)render()},600);
+    if(lives<=0){done=true;setTimeout(()=>outOfLives(),500)}
+    return;
+  }
+  p.gone=true;moves++;tone(440+Math.min(moves,14)*28,.12,'triangle');info();
+  const [dx,dy]=DIRS[p.d];
+  const t=setInterval(()=>{
+    const h=p.draw[p.draw.length-1];
+    p.draw.push({x:h.x+dx,y:h.y+dy});p.draw.shift();
+    if(p.draw.every(out)){p.removed=true;clearInterval(t)}
+    render();
+  },55);
+  if(pieces.every(q=>q.gone)){
+    done=true;const st=lives/maxLives()>=1?3:lives/maxLives()>=.5?2:1;saveStars(level,st);buzz([30,40,30]);confetti();[523,659,784,1047].forEach((f,k)=>tone(f,.25,'triangle',.12,k*.11));level++;
+    let dbl=false;const earn=10+st*5+(premium?10:0);addCoins(earn);unlocked=Math.min(1000,Math.max(unlocked,level));try{localStorage.setItem('arrowout2-level',unlocked)}catch(e){}
+    setTimeout(()=>show('Cleared!',`${'★'.repeat(st)}${'☆'.repeat(3-st)}  ·  ${moves} moves  ·  +${earn} 🪙`,'Next level',nextLevel,[[`▶ Ad: double coins (+${earn} 🪙)`,async()=>{if(dbl)return;if(await showRewarded()){dbl=true;addCoins(earn);toast(`Bonus +${earn} coins!`)}}]]),900);
+  }
+}
+
+function show(t,p,b,fn,extra){
+  $('mt').textContent=t;$('mp').textContent=p;$('mb').textContent=b;
+  $('mb').onclick=fn;$('mx').innerHTML='';
+  (extra||[]).forEach(([l,f])=>{const x=document.createElement('button');x.className='ghost';x.textContent=l;x.onclick=f;$('mx').appendChild(x)});
+  $('msg').classList.add('show');
+}
+
+/* ---------- Monetization ---------- */
+const TESTING=false; // RELEASE build: real ads. Never tap your own ads.
+const PREMIUM_ENABLED=false; // hidden until Google Play Billing is connected
+const IDS={interstitial:'ca-app-pub-4784236105412473/5949956868',rewarded:'ca-app-pub-4784236105412473/8094959817',banner:'ca-app-pub-4784236105412473/6390995906'}; // your AdMob ad units (TESTING=true keeps them in test mode)
+const Native=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const AdMob=Native&&window.Capacitor.Plugins&&window.Capacitor.Plugins.AdMob;
+let premium=false;
+if(!TESTING){try{premium=localStorage.getItem('arrowout2-premium')==='1'}catch(e){}} // in test mode Premium resets on every launch
+let muted=false,ac;try{muted=localStorage.getItem('arrowout2-mute')==='1'}catch(e){}
+function tone(f,d,t='sine',v=.12,delay=0){
+  if(muted)return;
+  try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime+delay;
+    o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);
+    o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+d)}catch(e){}
+}
+function getStars(){try{return JSON.parse(localStorage.getItem('arrowout2-stars'))||{}}catch(e){return{}}}
+function saveStars(l,st){try{const m=getStars();m[l]=Math.max(m[l]||0,st);localStorage.setItem('arrowout2-stars',JSON.stringify(m))}catch(e){}}
+function totalStars(){return Object.values(getStars()).reduce((a,b)=>a+b,0)}
+const LIFE_COST=50;
+let coins=20;try{const c=localStorage.getItem('arrowout2-coins');if(c!==null)coins=parseInt(c)||0}catch(e){}
+function addCoins(k){coins+=k;try{localStorage.setItem('arrowout2-coins',coins)}catch(e){}updateTop()}
+function updateTop(){$('lvl').textContent='Lv '+level+' · ★'+totalStars()+' · 🪙'+coins}
+const hideMsg=()=>$('msg').classList.remove('show');
+async function menuBanner(on){
+  if(!AdMob||(on&&premium))return;
+  try{if(on)await AdMob.showBanner({adId:IDS.banner,adSize:'ADAPTIVE_BANNER',position:'BOTTOM_CENTER',margin:0,isTesting:TESTING});else await AdMob.removeBanner()}catch(e){}
+}
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function confetti(){const b=$('board');for(let i=0;i<26;i++){const e=document.createElement('i');e.textContent=['★','✦','●'][i%3];e.className='cf';e.style.cssText=`left:${Math.random()*100}%;color:var(${COLS[i%4]});animation-delay:${Math.random()*.4}s`;b.appendChild(e);setTimeout(()=>e.remove(),1900)}}
+const todayStr=()=>new Date().toLocaleDateString('en-CA');
+function dailyState(){let o={d:'',s:0};try{o=JSON.parse(localStorage.getItem('arrowout2-daily'))||o}catch(e){}return o}
+function nextStreak(o){const y=new Date(Date.now()-864e5).toLocaleDateString('en-CA');return o.d===todayStr()?o.s:(o.d===y?o.s+1:1)}
+function dailyReward(s){return[10,15,20,25,30,40,60][Math.min(s,7)-1]*(premium?2:1)}
+function refreshDaily(){
+  const o=dailyState(),ready=o.d!==todayStr();
+  $('mdaily').textContent=ready?`🎁 Claim daily reward (+${dailyReward(nextStreak(o))} 🪙)`:`🎁 Claimed today · streak ${o.s} 🔥`;
+  $('mdaily').disabled=!ready;
+}
+function claimDaily(){
+  const o=dailyState();if(o.d===todayStr())return;
+  const st=nextStreak(o),r=dailyReward(st);addCoins(r);
+  try{localStorage.setItem('arrowout2-daily',JSON.stringify({d:todayStr(),s:st}))}catch(e){}
+  [523,659,784].forEach((f,k)=>tone(f,.2,'triangle',.12,k*.1));toast(`+${r} coins · day ${st} streak 🔥`);
+  $('mcoins').textContent=`🪙 ${coins}  ·  ★ ${totalStars()}`;refreshDaily();
+}
+async function skipLevel(){
+  if(!(await showRewarded()))return;
+  level=Math.min(1000,level+1);unlocked=Math.min(1000,Math.max(unlocked,level));
+  try{localStorage.setItem('arrowout2-level',unlocked)}catch(e){}
+  hideMsg();load();toast('Level skipped');
+}
+function maxLives(){return premium?5:3}
+
+function mockAd(rewarded){return new Promise(res=>{
+  let t=rewarded?4:3;const a=$('ad'),x=$('adx');
+  $('adt').textContent=(rewarded?'Rewarded':'Interstitial')+' test ad';$('adc').textContent=t;
+  x.style.display=rewarded?'':'none';x.textContent='Skip (no reward)';
+  const end=ok=>{clearInterval(iv);a.classList.remove('show');res(ok)};
+  x.onclick=()=>end(false);a.classList.add('show');
+  const iv=setInterval(()=>{t--;$('adc').textContent=Math.max(t,0);
+    if(t>0)return;
+    if(rewarded)end(true);else{clearInterval(iv);x.style.display='';x.textContent='Close';x.onclick=()=>end(true)}
+  },1000);
+})}
+function adFail(e){try{alert('Ad error: '+(e&&(e.message||e.errorMessage)||JSON.stringify(e)))}catch(_){}}
+async function initAds(){if(AdMob){try{await AdMob.initialize({initializeForTesting:TESTING})}catch(e){}preloadRewarded();preloadInterstitial();if($('menu').classList.contains('show'))menuBanner(true)}}
+let rewardReady=false,interReady=false,adWhy='';
+async function preloadRewarded(){
+  if(!AdMob)return false;if(rewardReady)return true;
+  try{await AdMob.prepareRewardVideoAd({adId:IDS.rewarded,isTesting:TESTING});rewardReady=true}catch(e){rewardReady=false;adWhy=(e&&(e.message||e.errorMessage))||JSON.stringify(e)}
+  return rewardReady;
+}
+async function preloadInterstitial(){
+  if(!AdMob)return false;if(interReady)return true;
+  try{await AdMob.prepareInterstitial({adId:IDS.interstitial,isTesting:TESTING});interReady=true}catch(e){interReady=false}
+  return interReady;
+}
+async function showInterstitial(){
+  if(premium)return;
+  if(!AdMob)return; // web version: no ads
+  if(!(await preloadInterstitial()))return;   // no ad available: just skip it, never block the player
+  interReady=false;
+  try{await AdMob.showInterstitial()}catch(e){}
+  preloadInterstitial();
+}
+async function showRewarded(){
+  if(!AdMob)return true; // web version: no ads, rewards are free
+  if(!(await preloadRewarded())){toast('No ad available right now. Here is a free hint!'+(TESTING&&adWhy?' ['+adWhy+']':''));return true}
+  rewardReady=false;
+  let gotEv=false,gotPr=false,by='none',err=null;const hs=[],wait=ms=>new Promise(x=>setTimeout(x,ms));
+  let closed;const dismissed=new Promise(r=>closed=r);
+  let wasHidden=false;
+  const vis=()=>{if(document.hidden)wasHidden=true;else if(wasHidden){by='visible';closed()}};
+  document.addEventListener('visibilitychange',vis);
+  const on=(names,fn)=>names.forEach(n=>{try{AdMob.addListener(n,fn).then(h=>hs.push(h)).catch(()=>{})}catch(e){}});
+  try{
+    on(['onRewarded','onRewardedVideoAdReward'],()=>{gotEv=true});
+    on(['onAdDismissed','onRewardedVideoAdDismissed'],()=>{by='event';closed()});
+    const shown=AdMob.showRewardVideoAd().then(r=>{gotPr=!!r;if(by==='none')by='promise'}).catch(e=>{err=e});
+    await Promise.race([shown,dismissed,wait(60000)]);
+    await wait(400);
+  }catch(e){err=e}
+  document.removeEventListener('visibilitychange',vis);
+  hs.forEach(h=>{try{h.remove()}catch(e){}});
+  preloadRewarded();   // get the next ad ready in the background
+  if(err){toast('Ad could not be shown. Here is a free hint!');return true}
+  const got=gotEv||gotPr;
+  if(!got)toast('No reward earned. Watch the whole ad to get a hint.');
+  return got;
+}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),6000)}
+// Billing adapter: replace the body with a real Google Play Billing plugin before release
+const Billing={
+  async buy(){if(TESTING)return confirm('Test purchase (no real charge). Unlock Premium?');alert('Billing not connected yet');return false},
+  async restore(){return premium}
+};
+function setPremium(v){
+  premium=v;try{localStorage.setItem('arrowout2-premium',v?'1':'0')}catch(e){}
+  updateHintLabel();
+}
+function updateHintLabel(){$('hint').textContent=premium?'Hint':'Hint ▶ Ad'}
+
+async function nextLevel(){
+  if(level>1000){level=1000;openMenu();return}
+  if(!premium&&level>=3&&level%2===1)await showInterstitial();
+  load();
+}
+function openPremium(){
+  if(done)return;
+  const close=()=>$('msg').classList.remove('show');
+  if(premium){show('Premium active','Thank you for supporting the game.','Close',close);return}
+  show('★ Premium','No ads · free unlimited hints · 5 lives per level','Unlock Premium',async()=>{
+    if(await Billing.buy()){setPremium(true);close();lives=maxLives();hearts()}
+  },[['Restore purchase',async()=>{if(await Billing.restore()){setPremium(true);close()}}],['Close',close]]);
+}
+
+function revive(k){lives=k;done=false;hideMsg();hearts()}
+function outOfLives(){
+  show('Out of lives','Keep going on this level?','▶ Watch ad: +2 lives',async()=>{if(await showRewarded())revive(2)},
+   [[`🪙 ${LIFE_COST} coins: +1 life`,()=>{if(coins<LIFE_COST)return toast('Not enough coins');addCoins(-LIFE_COST);revive(1)}],
+    ['▶ Skip level (ad)',skipLevel],['Restart level',load],['Menu',openMenu]]);
+}
+$('hint').onclick=async()=>{
+  if(done)return;
+  const i=pieces.findIndex(p=>!p.gone&&!blocker(p));
+  if(i<0)return;
+  if(!premium&&!(await showRewarded()))return;
+  render(i);toast('Tap the glowing arrow');
+};
+/* ---------- Menu & level select ---------- */
+let canResume=false;
+function openMenu(){
+  canResume=!done&&moves>0;hideMsg();$('msnd').textContent=muted?'🔇 Sound off':'🔊 Sound on';refreshDaily();
+  $('mcoins').textContent=`🪙 ${coins}  ·  ★ ${totalStars()}`;
+  $('mplay').textContent=canResume?'Resume':'Play · Level '+unlocked;
+  $('lv').classList.remove('show');$('menu').classList.add('show');menuBanner(true);
+}
+function startLevel(l){menuBanner(false);level=l;$('menu').classList.remove('show');$('lv').classList.remove('show');load()}
+const WORLDS=['🌱 Meadow','🌊 Lagoon','🏜️ Dunes','🌋 Embers','❄️ Glacier','🌲 Forest','🏙️ Skyline','🪐 Orbit','🍬 Candy','🔮 Mystic','🌴 Jungle','🏰 Citadel','🌌 Nebula','⚙️ Foundry','🌅 Horizon','🧊 Crystal','🐉 Dragon','🚀 Launch','🌠 Cosmos','👑 Legend'];
+function openLevels(c){
+  if(c===undefined)c=Math.floor((unlocked-1)/50);
+  const st=getStars(),g=$('lgrid'),w=$('wchips');g.innerHTML='';w.innerHTML='';
+  WORLDS.forEach((nm,k)=>{const b=document.createElement('button');b.className='chip'+(k===c?' on':'');b.textContent=nm.split(' ')[0];b.disabled=k*50+1>unlocked;b.onclick=()=>openLevels(k);w.appendChild(b)});
+  $('wtitle').textContent=WORLDS[c]+' · '+(c*50+1)+'–'+(c*50+50);
+  for(let l=c*50+1;l<=c*50+50;l++){
+    const b=document.createElement('button'),k=st[l]||0;
+    b.className=l>unlocked?'':l===unlocked?'cur':k===3?'t3':'ghost';b.disabled=l>unlocked;
+    b.innerHTML=l>unlocked?'🔒':`${l}<small>${k?'★'.repeat(k):'·'}</small>`;
+    b.onclick=()=>startLevel(l);g.appendChild(b);
+  }
+  menuBanner(false);$('menu').classList.remove('show');$('lv').classList.add('show');
+  try{w.children[c].scrollIntoView({inline:'center',block:'nearest'})}catch(e){}
+}
+$('title').onclick=openMenu;
+$('mplay').onclick=()=>canResume?(menuBanner(false),$('menu').classList.remove('show')):startLevel(unlocked);
+$('mlev').onclick=()=>openLevels();
+$('msnd').onclick=()=>{$('snd').click();$('msnd').textContent=muted?'🔇 Sound off':'🔊 Sound on'};
+$('lback').onclick=openMenu;
+$('mprem').onclick=()=>{menuBanner(false);$('menu').classList.remove('show');openPremium()};
+$('prem').onclick=openPremium;
+$('restart').onclick=load;
+$('snd').textContent=muted?'🔇':'🔊';
+$('snd').onclick=()=>{muted=!muted;$('snd').textContent=muted?'🔇':'🔊';try{localStorage.setItem('arrowout2-mute',muted?'1':'0')}catch(e){}tone(600,.1)};
+updateHintLabel();initAds();
+load();
+$('mcoins').textContent=`🪙 ${coins}  ·  ★ ${totalStars()}`;$('mplay').textContent=unlocked>1?'Play · Level '+unlocked:'Play';
+if(!PREMIUM_ENABLED){$('prem').style.display='none';$('mprem').style.display='none'}
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
+let installEv=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;$('minstall').style.display=''});
+window.addEventListener('appinstalled',()=>{installEv=null;$('minstall').style.display='none'});
+$('minstall').onclick=async()=>{if(!installEv)return;installEv.prompt();try{await installEv.userChoice}catch(e){}installEv=null;$('minstall').style.display='none'};
+$('mdaily').onclick=claimDaily;refreshDaily();
+if(level===1)toast('Tap an arrow to slide it out. Blocked arrows cost a heart.');
+</script>
+</body>
+</html>
